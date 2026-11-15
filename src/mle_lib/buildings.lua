@@ -98,6 +98,7 @@ function Buildings.new(api)
         end
         state = "applying"
         local rollback_failed = false
+        local rollback_status = {}
         local ok, result = pcall(Rows.run, function(transaction)
             local guarded = {table = transaction.table}
             function guarded.defer(undo)
@@ -117,10 +118,10 @@ function Buildings.new(api)
                     "Native building readback failed " .. definition.id)
             end
             return reports
-        end)
+        end, rollback_status)
         if not ok then
             state = "failed"
-            if rollback_failed then state = "reload_required" end
+            if rollback_failed or rollback_status.rollback_failed then state = "reload_required" end
             error(result, 0)
         end
         state, receipt = "registered", result

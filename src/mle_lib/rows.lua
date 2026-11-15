@@ -1,7 +1,7 @@
 -- Track rows inserted through the transaction, including writes that fail after insertion.
 local Rows = {}
 
-function Rows.run(callback)
+function Rows.run(callback, status)
     local undo, wrappers = {}, {}
     local transaction = {}
 
@@ -37,6 +37,7 @@ function Rows.run(callback)
         if not restored then failures[#failures + 1] = tostring(reason) end
     end
     local message = tostring(result)
+    if status then status.rollback_failed = #failures > 0 end
     if #failures > 0 then message = message .. " (rollback failed: " .. table.concat(failures, ", ") .. ")" end
     error(message, 0)
 end
