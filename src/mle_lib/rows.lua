@@ -9,6 +9,7 @@ function Rows.run(callback)
     function transaction.table(data)
         if wrappers[data] then return wrappers[data] end
         local adapter = {
+            IsValid = function() return data:IsValid() end,
             AddRow = function(_, id, value)
                 if not data:FindRow(id) then
                     transaction.defer(function()
