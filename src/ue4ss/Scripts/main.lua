@@ -5,6 +5,7 @@ local Catalog = require("mle_lib.catalog")
 local Runtime = require("mle_lib.runtime")
 local Json = require("mle_lib.json")
 local Host = require("mle_lib.host")
+local Bridge = require("mle_lib.building_bridge")
 local helpers = require("UEHelpers")
 local building_table = "/Game/NotStronghold/Data/buildingStats.buildingStats"
 
@@ -23,6 +24,7 @@ end
 
 local function start()
     assert(at_main_menu(), "Install or change packages at the main menu before loading a save")
+    Bridge.open(directory, StaticFindObject, at_main_menu).verify()
     local file = assert(io.open(directory .. "/packages.txt", "r"))
     local catalog = assert(file:read("*a"))
     file:close()

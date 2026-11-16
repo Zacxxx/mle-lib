@@ -14,7 +14,9 @@ from build_native import build
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def package(destination, runtime=False):
+def package(destination, runtime=False, enable=False):
+    if enable and not runtime:
+        raise ValueError("Only the standalone runtime can be enabled")
     version = re.search(r'VERSION = "([^"]+)"', (ROOT / 'src/mle_lib/host.lua').read_text()).group(1)
     files = {'Scripts/mle_lib/' + path.name: path.read_bytes() for path in sorted((ROOT / 'src/mle_lib').glob('*.lua'))}
     with tempfile.TemporaryDirectory(prefix='mle-sdk-native-') as temporary:
@@ -25,6 +27,8 @@ def package(destination, runtime=False):
     files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
     if runtime:
         files['Scripts/main.lua'] = (ROOT / 'src/ue4ss/Scripts/main.lua').read_bytes()
+        if enable:
+            files['enabled.txt'] = b'1\n'
         files['packages.txt'] = b'# List one installed package folder per line.\n'
         files['README.md'] = (ROOT / 'docs/shared-runtime.md').read_bytes()
     files['LICENSE'] = (ROOT / 'LICENSE').read_bytes()
@@ -55,5 +59,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'dist/mle-lib-sdk.zip')
     parser.add_argument('--runtime', action='store_true')
+    parser.add_argument('--enable', action='store_true', help='Include the UE4SS enable marker in a runtime ZIP')
     args = parser.parse_args()
-    print(package(args.output, runtime=args.runtime))
+    if args.enable and not args.runtime:
+        parser.error('--enable requires --runtime')
+    print(package(args.output, runtime=args.runtime, enable=args.enable))

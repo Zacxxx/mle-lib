@@ -20,7 +20,7 @@ function Runtime.new(api)
     local host = Host.new({capabilities = capabilities, enabled = api.enabled, report = report})
     local blocked = false
     local cleanup = {}
-    local counters = {wrote = 0, loaded = 0, failed = 0}
+    local counters = {wrote = 0, loaded = 0, failed = 0, empty_writes = 0, missing_loads = 0}
 
     local function guarded(id, operation, callback)
         if not callback then return nil end
@@ -107,7 +107,8 @@ function Runtime.new(api)
 
     function runtime:inspect()
         return {registry = registry:inspect(), hooks = broker.targets(), lifecycle = host:state(),
-            save = {wrote = counters.wrote, loaded = counters.loaded, failed = counters.failed, blocked = blocked}}
+            save = {wrote = counters.wrote, loaded = counters.loaded, failed = counters.failed,
+                empty_writes = counters.empty_writes, missing_loads = counters.missing_loads, blocked = blocked}}
     end
 
     local function save(_, object)
@@ -121,7 +122,11 @@ function Runtime.new(api)
             assert(snapshot == nil or type(snapshot) == "table", "Save provider " .. id .. " must return a table or nil")
             next_state[id] = snapshot
         end)
-        if next(next_state) or previous then NativeSave.write(value, next_state, api.make_name) end
+        if not next(next_state) and not previous then
+            counters.empty_writes = counters.empty_writes + 1
+            return
+        end
+        NativeSave.write(value, next_state, api.make_name)
         counters.wrote = counters.wrote + 1
     end
 
@@ -140,7 +145,8 @@ function Runtime.new(api)
         if not ok then error(state, 0) end
         assert(#failures == 0, table.concat(failures, "\n"))
         blocked = false
-        counters.loaded = counters.loaded + 1
+        if state then counters.loaded = counters.loaded + 1
+        else counters.missing_loads = counters.missing_loads + 1 end
     end
 
     function runtime:bind_save()

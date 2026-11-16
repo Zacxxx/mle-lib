@@ -8,6 +8,11 @@ package folder names, one per line, in `MLELib/packages.txt`. Restart the
 game after editing this list. A folder omitted from the list is inactive.
 Keep package folders out of UE4SS's own enable list.
 
+The runtime ZIP is disabled by default. To build it with the UE4SS enable
+marker included, run `python3 scripts/package_sdk.py --runtime --enable --output dist/mle-lib-runtime.zip`.
+At startup, MLE Lib checks the exact supported game and UE4SS binary hashes
+before discovering or executing packages.
+
 All package entries execute in the MLE Lib Lua VM. Lua entries are trusted
 code. Capability declarations specify the service contract and are not a
 sandbox. Mods independently started in another UE4SS Lua VM do not belong to
@@ -45,9 +50,12 @@ Declare `mle.registry`, `mle.hooks`, `mle.save`, or `mle.buildings` as needed in
 
 The native save adapter uses the reflected `IoHandler` save and load functions.
 The `mle.runtime.status` console command reports the active packages, registry,
-registered hook paths, and serialization counters. A successful write counter
-means the save object accepted the state. A successful load from disk after a
-restart is the end-to-end check.
+registered hook paths, and serialization counters. `wrote` counts metadata
+written to the native save object. `loaded` counts restores with metadata
+present. `empty_writes` and `missing_loads` identify callbacks without payloads.
+`failed` counts callback failures. The game may still save after a callback
+failure. Use a disposable slot and confirm both packages recover their state
+after restarting the game before treating a write as durable.
 
 ## Two-package acceptance
 

@@ -83,3 +83,11 @@ reloaded.LevelName = "Another world"
 hooks[Load][2](nil, marshal(reloaded))
 assert(_G.shared_fixture.first == nil and _G.shared_fixture.second == nil)
 assert(runtime:inspect().save.blocked and #failures == 1)
+
+runtime, hooks, failures = boot(both)
+local empty = {daysTotal = 1, LevelName = "Empty", savedBuildings = {}}
+hooks[Load][2](nil, marshal(empty))
+assert(runtime:inspect().save.loaded == 0 and runtime:inspect().save.missing_loads == 1)
+hooks[Save][1](nil, marshal(empty))
+assert(runtime:inspect().save.wrote == 0 and runtime:inspect().save.failed == 1)
+assert(#failures == 1)
