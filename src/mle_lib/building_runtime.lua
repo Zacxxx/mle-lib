@@ -70,7 +70,8 @@ function Runtime.new(api)
             assert(buildings.RowStruct:GetFullName() == "ScriptStruct /Script/ManorLords.Stat", "Building schema mismatch")
         end,
         presentation = function(definition, row, transaction)
-            require("mle_lib.building_text").install(definition, {find_object = find}, transaction)
+            local report = type(api.ui) == "table" and api.ui.log
+            require("mle_lib.building_text").install(definition, {find_object = find, report = report}, transaction)
             local icon
             if api.asset_root and definition.presentation.icon:sub(1, #api.asset_root) == api.asset_root then
                 icon = assets.load(definition.presentation.icon)

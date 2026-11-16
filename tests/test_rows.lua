@@ -6,7 +6,9 @@ local data = {
     RemoveRow = function(_, id) storage[id] = nil end,
 }
 local ok = pcall(Rows.run, function(tx)
-    tx.table(data):AddRow("barn", true)
+    local table = tx.table(data)
+    assert(tx.table(table) == table, "Wrapping a transaction table twice must reuse the existing journal")
+    table:AddRow("barn", true)
     tx.table(data):AddRow("part", true)
     error("native binding refused")
 end)

@@ -25,7 +25,7 @@ function Rows.run(callback, status)
             GetFullName = function() return data:GetFullName() end,
         }
         setmetatable(adapter, {__index = function(_, field) return data[field] end})
-        wrappers[data] = adapter
+        wrappers[data], wrappers[adapter] = adapter, adapter
         return adapter
     end
 
