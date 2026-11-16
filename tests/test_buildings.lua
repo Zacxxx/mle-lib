@@ -114,3 +114,48 @@ unmount(); unmount()
 assert(closed and not pcall(panel_api.get_status))
 assert(composed.attach_instance(701, "site-1", nil, save).get_status().recipe == "beams")
 print("PASS: template overrides, capability checks, isolated behavior, panel actions and state restore")
+
+local mixed = service()
+local menu, placed, cleaned
+local configure = assert(loadfile("examples/workshop_yard.lua"))()
+configure(mixed, {
+    supports_plot = function(d, options) return d.template_id == 72 and options.road_snap end,
+    begin_plot = function(id, context, options)
+        assert(id == 703 and context.player and options.road_snap)
+        return "preview_started"
+    end,
+    list_improvements = function(_, options) return options.allowed end,
+    place_improvement = function(actor, id, options)
+        assert(actor:GetType() == 703 and id == options.allowed[1], "Improvement not allowed")
+        placed = id
+        return true
+    end,
+    mount_improvements = function(_, ui)
+        menu = ui
+        return function() cleaned = true end
+    end,
+})
+local yard_shop = definition("yard_workshop", 703)
+yard_shop.template_id, yard_shop.template = nil, "example.mod:workshop_with_yard"
+yard_shop.fields = {storageLimitGeneric = 200}
+mixed.register_building(yard_shop)
+local variant = definition("workshop_without_yard", 704)
+variant.template_id, variant.template, variant.yard = nil, yard_shop.template, false
+mixed.register_building(variant)
+assert(not pcall(mixed.begin_placement, 703, {player = true}))
+mixed.apply()
+assert(live[yard_shop.id].fields.needsRoad and live[yard_shop.id].families == 2)
+assert(live[yard_shop.id].fields.storageLimitGeneric == 200)
+assert(mixed.begin_placement(703, {player = true}) == "preview_started")
+assert(not mixed.panel_mounts(704))
+local actor = {GetType = function() return 703 end, GetAddress = function() return 7003 end}
+local instance = mixed.attach_instance(703, "yard-site", actor)
+assert(not pcall(mixed.attach_instance, 704, "wrong-site", actor))
+local close = mixed.mount_panel(703, {}, instance)
+assert(menu.title.en_US == "Yard Improvements" and menu.list()[1] == "example.mod:drying_rack")
+assert(not pcall(menu.place, "example.mod:forbidden") and placed == nil)
+assert(menu.place("example.mod:drying_rack") and placed == "example.mod:drying_rack")
+close()
+assert(cleaned and not pcall(menu.list))
+assert(mixed.inspect().entries[yard_shop.id].placement == "example.mod:plot")
+print("PASS: mixin precedence, placement dispatch, yard menu routing and per-building overrides")

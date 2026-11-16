@@ -22,7 +22,9 @@ def package(destination):
         for path in Path(temporary).iterdir():
             files['Native/' + path.name] = path.read_bytes()
     files.update({'State/.keep': b'', 'Control/.keep': b'', 'Assets/Cards/.keep': b''})
-    files['README.md'] = (ROOT / 'docs/buildings.md').read_bytes()
+    files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
+    for name in ('example_house.lua', 'recipe_panel.lua', 'workshop_yard.lua'):
+        files['examples/' + name] = (ROOT / 'examples' / name).read_bytes()
     manifest = {'name': 'MLE Lib', 'version': version,
         'revision': subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
         'target': json.loads((ROOT / 'config/runtime_target.json').read_text()),

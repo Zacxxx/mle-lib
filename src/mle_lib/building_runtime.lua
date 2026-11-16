@@ -52,7 +52,9 @@ function Runtime.new(api)
     local native = require("mle_lib.native_buildings").new({buildings = buildings, make_name = make_name,
         fields = api.fields or {storageLimitGeneric = "integer", storageLimitPantry = "integer", bVisibleInUi = "boolean",
             BuildingCategory = "integer", buildingFunction = "integer", constructionCost = "integer", bSize = "number", isWork = "boolean", job = "integer", needsRoad = "boolean", flammable = "boolean",
-            canSetWorkArea = "boolean", canRelocate = "boolean", maxHp = "integer"},
+            canSetWorkArea = "boolean", canRelocate = "boolean", maxHp = "integer",
+            storageLimitLarge = "integer", collidesWithRoads = "boolean",
+            bAllowSeasonalAssignment = "boolean", chooseProducedGood = "boolean"},
         preflight = function(definition)
             for _, cost in ipairs({definition.construction_goods or {}, definition.upgrade and definition.upgrade.cost or {}}) do
                 if #cost > 0 then
@@ -134,6 +136,17 @@ function Runtime.new(api)
             and template.DisplayName or template.DisplayName:ToString())
     end
     service = require("mle_lib.buildings").new({before_world_load = before, adapter = native, identities = identities, transaction = api.transaction})
+    service.register_building_placement({
+        id = "mle:native_fixed",
+        validate = function(options) return next(options) == nil end,
+        begin = function(id, context)
+            assert(not before(), "Placement requires a loaded world")
+            local pawn = context and context.pawn or require("UEHelpers").GetPlayer()
+            assert(pawn and pawn:IsValid(), "Player pawn unavailable")
+            assert(not pawn:isInAnyConstructionMode(), "Finish the current construction mode first")
+            pawn:activateBuildingMode(id)
+        end,
+    })
     service.identities = identities
     function service.start_ui(ui_api)
         ui_api = ui_api or {}

@@ -45,7 +45,8 @@ local function validate(definition)
     assert(type(definition) == "table" and definition.schema == 1, "Unsupported building definition schema")
     known_fields(definition, {schema = true, owner = true, id = true, numeric_id = true, template_id = true,
         construction_part_id = true, native_label = true, template_label = true, construction_label = true,
-        row_prepared = true, enabled = true, assets = true, presentation = true, fields = true, template = true,
+        row_prepared = true, enabled = true, assets = true, presentation = true, fields = true, template = true, placement = true,
+        behavior = true, interface = true, yard = true,
         families = true, construction_goods = true, upgrade_to = true, upgraded_from = true, upgrade = true},
         "Unknown building definition field: ")
     assert(identity(definition.id) and positive(definition.numeric_id), "Invalid building identity")
@@ -101,13 +102,23 @@ function Buildings.new(api)
     end
     local self, definitions, numeric, parts = {}, {}, {}, {}
     local templates = require("mle_lib.building_templates").new(copy)
+    local capabilities = require("mle_lib.building_capabilities").new(copy)
     local state, receipt = "collecting", nil
 
-    for _, method in ipairs({"register_building_template", "register_building_behavior", "register_building_panel"}) do
+    for _, method in ipairs({"register_building_template", "register_building_behavior", "register_building_panel", "register_building_mixin", "register_building_yard"}) do
         self[method] = function(value)
             assert(state == "collecting", "Building registrations are frozen")
             templates[method](value)
         end
+    end
+    function self.register_building_placement(provider)
+        assert(state == "collecting", "Building registrations are frozen")
+        capabilities.register_placement(provider)
+    end
+    function self.begin_placement(id, context)
+        assert(state == "registered" and (not api.transaction or (api.transaction.status and api.transaction.status.state == "committed")),
+            "Building registration must be committed before placement")
+        return capabilities.begin_placement(id, context)
     end
     self.attach_instance = templates.attach_instance
     self.mount_panel = templates.mount_panel
@@ -118,6 +129,7 @@ function Buildings.new(api)
         assert(state == "collecting", "Building registrations are frozen")
         definition = templates.resolve(copy(definition))
         if adapter.prepare then adapter.prepare(definition) end
+        capabilities.validate_placement(definition.placement, definition)
         if api.identities then
             definition.numeric_id = api.identities.reserve("buildings", definition.id, definition.numeric_id)
             definition.construction_part_id = api.identities.reserve("parts", definition.id, definition.construction_part_id)
@@ -188,6 +200,7 @@ function Buildings.new(api)
             for _, definition in ipairs(ordered) do
                 reports[definition.id] = adapter.register(copy(definition), guarded)
                 templates.bind(definition, guarded)
+                capabilities.bind(definition, guarded)
             end
             if #ordered > 0 and adapter.finalize then adapter.finalize(copy(ordered), reports, guarded) end
             for _, definition in ipairs(ordered) do
@@ -213,7 +226,7 @@ function Buildings.new(api)
         for id, definition in pairs(definitions) do
             entries[id] = {numeric_id = definition.numeric_id, construction_part_id = definition.construction_part_id,
                 upgrade_id = definition.upgrade and definition.upgrade.id, enabled = definition.enabled ~= false,
-                composition = templates.describe(definition.numeric_id)}
+                placement = definition.placement and definition.placement.id, composition = templates.describe(definition.numeric_id)}
         end
         local reported = state
         if api.transaction and api.transaction.status then
