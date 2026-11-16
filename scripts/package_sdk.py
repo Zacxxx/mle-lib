@@ -19,12 +19,16 @@ def package(destination, runtime=False, enable=False):
         raise ValueError("Only the standalone runtime can be enabled")
     version = re.search(r'VERSION = "([^"]+)"', (ROOT / 'src/mle_lib/host.lua').read_text()).group(1)
     files = {'Scripts/mle_lib/' + path.name: path.read_bytes() for path in sorted((ROOT / 'src/mle_lib').glob('*.lua'))}
+    files.update({'Tools/mle_authoring/' + path.name: path.read_bytes()
+                  for path in sorted((ROOT / 'src/mle_authoring').glob('*.py'))})
+    files['examples/assembly_roles.py'] = (ROOT / 'examples/assembly_roles.py').read_bytes()
+    files['docs/assembly-authoring.md'] = (ROOT / 'docs/assembly-authoring.md').read_bytes()
     with tempfile.TemporaryDirectory(prefix='mle-sdk-native-') as temporary:
         build(ROOT / 'src/native', temporary)
         for path in Path(temporary).iterdir():
             files['Native/' + path.name] = path.read_bytes()
     files.update({'State/.keep': b'', 'Control/.keep': b'', 'Assets/Cards/.keep': b''})
-    files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
+    files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').replace('(assembly-authoring.md)', '(docs/assembly-authoring.md)').encode()
     if runtime:
         files['Scripts/main.lua'] = (ROOT / 'src/ue4ss/Scripts/main.lua').read_bytes()
         if enable:

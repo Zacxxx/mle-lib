@@ -21,3 +21,8 @@ The [building registration API](docs/buildings.md) includes the native adapter, 
 MLE Lib is distributed under the [MIT License](LICENSE).
 
 The [item and recipe API](docs/items.md) registers native rows, resolves recipe inputs and outputs and shares the library's row transaction.
+
+Building model authoring is available through the shared
+[Python assembly API](docs/assembly-authoring.md). The SDK includes an
+[Unreal Editor example](examples/assembly_roles.py) with main, visual and
+decoration roles and automatic native component naming.

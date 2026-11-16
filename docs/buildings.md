@@ -122,3 +122,9 @@ MLE Lib 0.1.5 adds `register_building_mixin`, `register_building_placement` and 
 The pinned reflection data identifies house plot mode and the extension-change entry point. Native Burgage plot placement for custom actors and vanilla backyard-extension routing have yet to pass in-game acceptance, so the SDK ships provider contracts for those integrations. The example expects the host to supply those operations and can be exercised with the offline fixture in `tests/test_buildings.lua`.
 
 An optional assets.main_mesh declares the mesh on the assembly’s MainBld_<part ID> component when it differs from the placement preview. The default is assets.preview. For modular buildings, use a visible foundation with the building collision in that slot and disjoint visual components for the remaining surfaces. Native construction conversion creates its own components from these meshes and can discard Blueprint component visibility settings.
+
+The shared Python assembly authoring API translates logical main, visual and
+decoration components into the native assembly conventions. It is shipped in
+Tools/mle_authoring in the SDK and runtime packages. See
+[assembly authoring](assembly-authoring.md) and
+[the editor example](../examples/assembly_roles.py).
