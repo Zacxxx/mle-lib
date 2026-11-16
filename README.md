@@ -19,3 +19,5 @@ The [building registration API](docs/buildings.md) includes the native adapter, 
 ## License
 
 MLE Lib is distributed under the [MIT License](LICENSE).
+
+The [item and recipe API](docs/items.md) registers native rows, resolves recipe inputs and outputs and shares the library's row transaction.

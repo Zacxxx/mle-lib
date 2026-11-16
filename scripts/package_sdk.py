@@ -24,7 +24,7 @@ def package(destination):
     files.update({'State/.keep': b'', 'Control/.keep': b'', 'Assets/Cards/.keep': b''})
     files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
     files['LICENSE'] = (ROOT / 'LICENSE').read_bytes()
-    for name in ('example_house.lua', 'recipe_panel.lua', 'workshop_yard.lua'):
+    for name in ('example_house.lua', 'recipe_panel.lua', 'workshop_yard.lua', 'items_and_recipes.lua'):
         files['examples/' + name] = (ROOT / 'examples' / name).read_bytes()
     manifest = {'name': 'MLE Lib', 'version': version,
         'revision': subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
