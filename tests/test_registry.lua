@@ -32,6 +32,7 @@ local function patch(field, op, value)
 end
 
 local registry, row, counters = fixture()
+rejected(function() registry:register("foreign", {id = "example.storage:unclaimed", schema = 1}) end, "MLE_REGISTRY_OWNER")
 registry:register("example.crops", {id = "example.crops:items/hay", schema = 1})
 registry:register("example.storage", {id = "example.storage:capacity", schema = 1,
     patches = {patch("storage", "add", 50), patch("accepted", "append", "example.crops:items/hay")}})

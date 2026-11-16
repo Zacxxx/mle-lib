@@ -186,6 +186,9 @@ function Registry.new(options)
         if entries[definition.id] then
             fail("MLE_REGISTRY_DUPLICATE", definition.id .. " is already owned by " .. entries[definition.id].owner)
         end
+        if definition.id:match("^([^:]+):") ~= owner then
+            fail("MLE_REGISTRY_OWNER", definition.id .. " does not belong to " .. owner)
+        end
         local references, patches = definition.references, definition.patches
         if references == nil then references = {} end
         if patches == nil then patches = {} end
