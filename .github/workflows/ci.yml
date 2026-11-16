@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Lua
-        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Install Lua and native compiler
+        run: sudo apt-get update && sudo apt-get install -y lua5.4 gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
       - name: Run offline tests and examples
         run: python3 scripts/mle.py test

@@ -49,3 +49,15 @@ local poisoned = service(); poisoned.register_building(definition("house",600));
 assert(poisoned.inspect().state == "reload_required")
 adapter.register = original_undo
 print("PASS: building ownership, frozen definitions, preflight, upgrade links, rollback and phase guard")
+
+local Rows = require("mle_lib.rows")
+local outer_service
+assert(not pcall(Rows.run, function(transaction)
+    outer_service = Buildings.new({adapter = adapter, transaction = transaction, before_world_load = function() return true end})
+    outer_service.register_building(definition("outer", 700))
+    outer_service.apply()
+    assert(live["example.mod:outer"])
+    error("later package failed")
+end))
+assert(not live["example.mod:outer"] and outer_service.inspect().state == "rolled_back")
+print("PASS: enclosing package transaction rolls back building registration and updates its status")

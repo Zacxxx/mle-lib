@@ -37,7 +37,7 @@ function World.install(data, entries, api, transaction)
         ids[entry.construction_part_id] = true
         local row = assert(data:FindRow(tostring(entry.numeric_id)), "Owned building row missing")
         local template = assert(data:FindRow(tostring(entry.template_id)), "Building template missing")
-        assert(text(row.DisplayName) == entry.label and text(template.DisplayName) == entry.template_label,
+        assert(text(row.DisplayName) == (entry.native_label or entry.label) and text(template.DisplayName) == entry.template_label,
             "Building row ownership differs")
         local assembly = api.assets.load_class(entry.assets.assembly)
         local construction = api.assets.load_class(entry.assets.construction)
@@ -68,7 +68,8 @@ function World.install(data, entries, api, transaction)
             existing = existing, part_key = part_key,
             part_fields = {ConstructionBP = construction, buildingPartName = part_label},
             label = part_label:GetComparisonIndex(), package = source.AssetPath.PackageName:GetComparisonIndex(),
-            asset = source.AssetPath.AssetName:GetComparisonIndex()}
+            asset = source.AssetPath.AssetName:GetComparisonIndex(), source = source,
+            path_address = type(source.GetStructAddress) == "function" and source:GetStructAddress() or nil}
     end
     local function apply(tx)
         local table = tx.table(parts)
@@ -79,7 +80,7 @@ function World.install(data, entries, api, transaction)
             assert(text(part.buildingPartName) == step.entry.construction_label
                 and part.ConstructionBP:GetFullName() == step.part_fields.ConstructionBP:GetFullName(), "Part readback failed")
             bindings[#bindings + 1] = {row = part:GetStructAddress(), label = step.label,
-                package = step.package, asset = step.asset}
+                package = step.package, asset = step.asset, path = step.path_address, source = step.source}
             tx.defer(function() set_path(step.row, step.backup) end)
             if path(step.row) ~= step.entry.assets.assembly then
                 set_path(step.row, step.target); changed = changed + 1
@@ -87,7 +88,7 @@ function World.install(data, entries, api, transaction)
             assert(path(step.row) == step.entry.assets.assembly and path(step.template) == step.original,
                 "Assembly binding readback failed")
         end
-        api.bind_construction_paths(bindings)
+        api.bind_construction_paths(bindings, tx)
         if api.resolve_part then
             for _, step in ipairs(pending) do
                 local class = api.resolve_part(step.entry.construction_part_id)
