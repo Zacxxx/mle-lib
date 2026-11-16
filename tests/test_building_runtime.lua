@@ -39,8 +39,9 @@ local function asset(path, kind)
     return {IsValid = valid, IsChildOf = valid, GetFullName = function() return kind .. " " .. path end,
         GetCDO = function() return {IsValid = valid, IsA = valid} end}
 end
+local bad_icon = false
 local assets = {load_class = function(path) return asset(path, "BlueprintGeneratedClass") end,
-    load = function(path) return asset(path, path:find("/Icons/", 1, true) and "Texture2D" or "StaticMesh") end}
+    load = function(path) return asset(path, not bad_icon and path:find("/Icons/", 1, true) and "Texture2D" or "StaticMesh") end}
 local definitions = {}
 for index = 1, 3 do
     local part = 19000 + index
@@ -74,7 +75,8 @@ local saved, calls = nil, {}
 local identities = Ids.new({read = function() return saved end, write = function(value) saved = value end,
     minimums = {buildings = 486, parts = 18500, upgrades = 116},
     occupied = function(domain, id) return domain == "buildings" and buildings:FindRow(tostring(id)) ~= nil end})
-local service = Runtime.new({ui = false, directory = "fixture", asset_root = root, assets = assets, buildings = buildings,
+local function make_service()
+return Runtime.new({ui = false, directory = "fixture", asset_root = root, assets = assets, buildings = buildings,
     upgrades = upgrades, items = {FindRow = function(_, id) return id == "16" and {} or nil end}, identities = identities, find_object = find, make_name = name, read_artwork = function() return "PNG" end,
     before_world_load = function() return true end, game_version = function() return "Version 0.8.117" end,
     bridge = {paths = function(kind, entries, transaction)
@@ -82,6 +84,14 @@ local service = Runtime.new({ui = false, directory = "fixture", asset_root = roo
         calls[#calls + 1] = kind
         transaction.defer(function() calls[#calls] = nil end)
     end, upgrade = function() error("Unexpected upgrade") end}})
+end
+bad_icon = true
+local rejected = make_service()
+for _, definition in ipairs(definitions) do rejected.register_building(definition) end
+assert(not pcall(rejected.apply))
+assert(not buildings:FindRow("487") and not translations:FindRow("buildingID_487"), "Invalid icon must roll back registration")
+bad_icon = false
+local service = make_service()
 for _, definition in ipairs(definitions) do service.register_building(definition) end
 service.apply()
 assert(service.inspect().state == "registered" and calls[1] == 1 and calls[2] == 0)

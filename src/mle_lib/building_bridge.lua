@@ -30,6 +30,11 @@ function Bridge.open(directory, find_object, before_world_load)
         return result
     end
     local self = {}
+    function self.verify()
+        assert(command("building-native", "mle_building_check_profile", function(nonce)
+            return string.format("MLE_BUILDING_PROFILE_1 %.0f\n", nonce)
+        end) == 1, "Native building profile verification failed")
+    end
     function self.paths(kind, entries, transaction)
         assert(math.type(kind) == "integer" and kind >= 0 and kind <= 4, "Unknown native path kind")
         assert(#entries > 0 and #entries <= 4096, "Unsupported native path count")

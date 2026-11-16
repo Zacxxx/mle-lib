@@ -77,6 +77,20 @@ static int mailbox(char *request, char *response) {
     return snprintf(request, MAX_PATH, "%s\\..\\Control\\building-native.request", path) < MAX_PATH &&
         snprintf(response, MAX_PATH, "%s\\..\\Control\\building-native.response", path) < MAX_PATH;
 }
+__declspec(dllexport) int mle_building_check_profile(void *lua_state) {
+    (void)lua_state;
+    char request[MAX_PATH], response[MAX_PATH], magic[32], extra;
+    unsigned long long nonce;
+    if (!mailbox(request, response)) return 0;
+    FILE *in = fopen(request, "r"), *out = fopen(response, "w");
+    if (!out) { if (in) fclose(in); return 0; }
+    if (in && fscanf(in, "%31s %llu", magic, &nonce) == 2 &&
+            !strcmp(magic, "MLE_BUILDING_PROFILE_1") && nonce && nonce <= 9007199254740991ULL &&
+            fscanf(in, " %c", &extra) != 1 && exact_executable()) fprintf(out, "OK %llu 1\n", nonce);
+    else fprintf(out, "ERROR Unsupported game or UE4SS profile\n");
+    if (in) fclose(in);
+    fclose(out); return 0;
+}
 __declspec(dllexport) int mle_building_paths(void *lua_state) {
     (void)lua_state;
     char request[MAX_PATH], response[MAX_PATH], magic[32], extra;

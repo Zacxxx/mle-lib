@@ -19,7 +19,7 @@ class NativeBuildingBridgeTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertEqual((root / 'first' / first).read_bytes(), (root / 'second' / second).read_bytes())
             symbols = subprocess.check_output(['x86_64-w64-mingw32-objdump', '-p', str(root / 'first' / first)], text=True)
-            for name in ('mle_building_paths', 'mle_building_upgrade_bind', 'mle_building_upgrade_unbind'):
+            for name in ('mle_building_check_profile', 'mle_building_paths', 'mle_building_upgrade_bind', 'mle_building_upgrade_unbind'):
                 self.assertIn(name, symbols)
 
 

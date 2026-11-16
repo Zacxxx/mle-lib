@@ -74,6 +74,7 @@ function Runtime.new(api)
         end,
         assert_profile = function()
             assert(before(), "Building registration requires the main menu")
+            if bridge.verify then bridge.verify() end
             local current = version()
             assert((type(current) == "string" and current or current:ToString()) == "Version 0.8.117", "Unsupported Manor Lords build")
             assert(buildings.RowStruct:GetFullName() == "ScriptStruct /Script/ManorLords.Stat", "Building schema mismatch")
@@ -84,6 +85,7 @@ function Runtime.new(api)
             if api.asset_root and definition.presentation.icon:sub(1, #api.asset_root) == api.asset_root then
                 icon = assets.load(definition.presentation.icon)
             else icon = assets.load_reference(definition.presentation.icon) end
+            assert(icon:GetFullName() == "Texture2D " .. definition.presentation.icon, "Building icon must be a Texture2D")
             local previous = row.purposeIcon
             transaction.defer(function() row.purposeIcon = previous; presentations[definition.numeric_id] = nil end)
             row.purposeIcon = icon
