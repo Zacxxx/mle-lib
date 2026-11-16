@@ -59,9 +59,13 @@ local function validate(definition)
     assert(positive(definition.template_id) and definition.template_id ~= definition.numeric_id,
         "Building requires a distinct native template")
     assert(type(definition.assets) == "table", "Building assets are required")
-    known_fields(definition.assets, {assembly = true, construction = true, preview = true}, "Unknown building asset field: ")
+    known_fields(definition.assets, {assembly = true, construction = true, preview = true, main_mesh = true}, "Unknown building asset field: ")
     for _, key in ipairs({"assembly", "construction", "preview"}) do
         assert(type(definition.assets[key]) == "string", "Missing building asset " .. key)
+    end
+    if definition.assets.main_mesh ~= nil then
+        assert(type(definition.assets.main_mesh) == "string" and #definition.assets.main_mesh > 0,
+            "Invalid main assembly mesh")
     end
     assert(positive(definition.construction_part_id), "Missing construction part identity")
     assert(type(definition.presentation) == "table", "Building presentation is required")

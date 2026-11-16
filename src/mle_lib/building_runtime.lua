@@ -54,6 +54,7 @@ function Runtime.new(api)
             assets.load_class(definition.assets.assembly)
             assets.load_class(definition.assets.construction)
             assets.load(definition.assets.preview)
+            if definition.assets.main_mesh then assets.load(definition.assets.main_mesh) end
             for _, key in ipairs({"card", "panel"}) do
                 local artwork = definition.presentation[key]
                 if artwork:sub(1, 6) == "/Game/" then assets.load(artwork)

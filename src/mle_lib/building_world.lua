@@ -49,7 +49,7 @@ function World.install(data, entries, api, transaction)
         assert(valid(shell), "Owned assembly shell missing")
         local mesh = shell.StaticMesh
         if mesh and type(mesh.IsValid) ~= "function" then mesh = mesh:get() end
-        assert(valid(mesh) and mesh:GetFullName() == "StaticMesh " .. entry.assets.preview, "Owned assembly mesh differs")
+        assert(valid(mesh) and mesh:GetFullName() == "StaticMesh " .. (entry.assets.main_mesh or entry.assets.preview), "Owned assembly mesh differs")
         local current, original = path(row), path(template)
         assert(current == original or current == entry.assets.assembly, "Building assembly changed externally")
         local part_key = tostring(entry.construction_part_id)

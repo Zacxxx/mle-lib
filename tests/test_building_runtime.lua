@@ -53,8 +53,11 @@ for index = 1, 3 do
         presentation = {name = {en_US = "House " .. index}, description = {en_US = "Description " .. index},
             card = "house_card", panel = "house_panel", icon = root .. "Icons/House.House"}, fields = {storageLimitGeneric = 100 + index}}
     local definition = definitions[index]
+    if index == 2 then
+        definition.assets.main_mesh = prefix .. "Foundation.House2Foundation"
+    end
     objects[definition.assets.assembly .. ":MainBld_" .. part .. "_GEN_VARIABLE"] =
-        {IsValid = valid, StaticMesh = asset(definition.assets.preview, "StaticMesh")}
+        {IsValid = valid, StaticMesh = asset(definition.assets.main_mesh or definition.assets.preview, "StaticMesh")}
 end
 local function find(path)
     if objects[path] then return objects[path] end
