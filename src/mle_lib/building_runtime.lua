@@ -26,6 +26,7 @@ function Runtime.new(api)
     local bridge = api.bridge or require("mle_lib.building_bridge").open(shared, find, before)
     local kismet = assert(find("/Script/Engine.KismetSystemLibrary"))
     local presentations = {}
+    local upgrade_requests
     local identities = api.identities or require("mle_lib.building_ids").new({
         minimums = {buildings = 486, parts = 18500, upgrades = 116},
         read = function() return read(shared .. "/State/buildings.ids") or read(shared .. "/State/buildings.ids.bak") end,
@@ -171,9 +172,24 @@ function Runtime.new(api)
                 return texture(key)
             end, schedule = ui_api.schedule, hooks = ui_api.hooks, log = ui_api.log,
             make_text = ui_api.make_text or FText, translate = ui_api.translate, panels = service})
-        ui.start(function() return presentations end)
+        local definitions = function() return presentations end
+        ui.start(definitions)
+        local has_upgrades = false
+        for _, presentation in pairs(presentations) do
+            if presentation.upgrade_id then has_upgrades = true end
+        end
+        if has_upgrades then
+            upgrade_requests = require("mle_lib.building_upgrade_requests").new({
+                find_object = find, find_all = ui_api.find_all, schedule = ui_api.schedule,
+                hooks = ui_api.hooks, log = ui_api.log,
+            })
+            upgrade_requests.start(definitions)
+        end
     end
-    function service.stop_ui() if ui then ui.stop(); ui = nil end end
+    function service.stop_ui()
+        if upgrade_requests then upgrade_requests.stop(); upgrade_requests = nil end
+        if ui then ui.stop(); ui = nil end
+    end
     return service
 end
 return Runtime
