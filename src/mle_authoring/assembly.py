@@ -62,6 +62,11 @@ def compile_assembly(definition):
         if role not in ("main", "visual", "decoration"):
             raise ValueError(f"Unknown component role {role}")
         main = role == "main"
+        # The native callback searches these markers anywhere in a component
+        # name before reaching its clutter branch. A clutter prefix alone
+        # cannot make a conflicting logical name safe.
+        if not main and any(marker in name.casefold() for marker in ("bld", "res_")):
+            raise ValueError("Visual and decoration names contain a reserved native classifier")
         main_count += main
         native_name = f"MainBld_{part_id}" if main else "clutter_" + name
         if native_name.casefold() in {key.casefold() for key in components}:

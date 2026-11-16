@@ -46,6 +46,13 @@ class AssemblyAuthoringTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 compile_assembly(source)
 
+    def test_native_classifier_collisions_are_rejected_even_with_clutter_prefix(self):
+        for name in ("MainBld_Roof", "FullBld_Roof", "Res_Hay", "Wall_Bld_9"):
+            source = example()
+            source["components"][1]["name"] = name
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "reserved native"):
+                compile_assembly(source)
+
     def test_component_rename_preserves_explicit_alias_and_transform(self):
         source = example()
         source["components"][1].update(aliases=["clutter_old_roof"], location_cm=[10, -20, 30],

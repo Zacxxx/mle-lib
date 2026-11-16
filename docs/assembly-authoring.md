@@ -15,7 +15,9 @@ The main role creates MainBld_<construction_part_id> with BlockAll collision
 and navigation influence. Exactly one main component is required. Visual and
 decoration roles create clutter_<logical name> with NoCollision. A logical
 name such as BarnVisual_Roof is supported. The compiler generates the native
-component name automatically. A building with one complete main mesh and no
+component name automatically. Visual and decoration names containing Bld or
+Res_ are rejected because the native callback searches those markers before
+its clutter branch. A building with one complete main mesh and no
 additional visual meshes is also supported.
 
 The default ground policy is reference for main, follow_reference for visual
