@@ -1,4 +1,4 @@
-local Host = {VERSION = "0.1.8"}
+local Host = {VERSION = "0.1.9"}
 
 local function problem(code, message, id, dependency)
     return {code = code, message = message, id = id, dependency = dependency}

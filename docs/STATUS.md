@@ -8,7 +8,7 @@
 | FR-ASSET-01/02/03 | Pak hash validation, owned Unreal path resolver and Ruralities artwork adapter | Live owned assets, visual checks, and save/reload |
 | FR-SAVE-01 to 04 | Sidecar unit coverage for identity, checksum, atomic publish, recovery, and migrations | Shared reflected adapter stages metadata in saved building tags. Certify durable save/reload and define an empty-settlement fallback bound to a confirmed save identity |
 | FR-TOOL and FR-DOC | CLI, CI, SDK examples and adapter docs | Full onboarding and operations acceptance |
-| FR-CONT | Ruralities exercises the building and upgrade adapters. Native item and recipe rows have offline tests | Shared item allocation, G3 building and item gameplay acceptance, and generic new entities |
+| FR-CONT | Ruralities exercises the building and upgrade adapters. Shared item and recipe registration has offline tests for explicit ID ownership, cross-package references, readback, and rollback | Ruralities legacy item migration, G3 building and item gameplay acceptance, and generic new entities |
 | FR-OBS | Local logs, package order and error details | Full support bundle and performance/usage evidence |
 
 ## R1 acceptance still pending

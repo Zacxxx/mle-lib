@@ -29,16 +29,32 @@ function Rows.run(callback, status)
         return adapter
     end
 
-    local ok, result = pcall(callback, transaction)
-    if ok then transaction.status.state = "committed"; return result end
-    local failures = {}
-    for index = #undo, 1, -1 do
-        local restored, reason = pcall(undo[index])
-        if not restored then failures[#failures + 1] = tostring(reason) end
+    local function restore()
+        local failures = {}
+        for index = #undo, 1, -1 do
+            local restored, reason = pcall(undo[index])
+            if not restored then failures[#failures + 1] = tostring(reason) end
+        end
+        undo = {}
+        transaction.status.state = #failures > 0 and "reload_required" or "rolled_back"
+        if status then status.rollback_failed = #failures > 0 end
+        return failures
     end
-    transaction.status.state = #failures > 0 and "reload_required" or "rolled_back"
+
+    local ok, result = pcall(callback, transaction)
+    if ok then
+        transaction.status.state = "committed"
+        if status and status.retain_undo then
+            status.restore = function()
+                status.restore = nil
+                local failures = restore()
+                assert(#failures == 0, "Row cleanup failed: " .. table.concat(failures, ", "))
+            end
+        end
+        return result
+    end
+    local failures = restore()
     local message = tostring(result)
-    if status then status.rollback_failed = #failures > 0 end
     if #failures > 0 then message = message .. " (rollback failed: " .. table.concat(failures, ", ") .. ")" end
     error(message, 0)
 end

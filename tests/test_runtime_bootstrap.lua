@@ -22,7 +22,7 @@ package.loaded["mle_lib.catalog"] = {load = function()
 end}
 package.loaded["mle_lib.runtime"] = {new = function()
     assert(verified)
-    return {start = function() started = true; return {} end,
+    return {capabilities = function() return {} end, start = function() started = true; return {} end,
         bind_save = function() end, apply_registry = function() end}
 end}
 

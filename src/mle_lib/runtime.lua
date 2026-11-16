@@ -3,10 +3,12 @@ local Hooks = require("mle_lib.hooks")
 local NativeSave = require("mle_lib.native_save")
 local Registry = require("mle_lib.registry")
 local Codec = require("mle_lib.state_codec")
+local Items = require("mle_lib.items")
+local Rows = require("mle_lib.rows")
 
 local Runtime = {}
 local capabilities = {
-    ["mle.registry"] = true, ["mle.hooks"] = true, ["mle.save"] = true, ["mle.buildings"] = true,
+    ["mle.registry"] = true, ["mle.hooks"] = true, ["mle.save"] = true, ["mle.buildings"] = true, ["mle.items"] = true,
 }
 local save_path = "/Script/ManorLords.IoHandler:SaveGameToSlot"
 local load_path = "/Script/ManorLords.IoHandler:LoadGameFromSlot"
@@ -14,13 +16,19 @@ local load_path = "/Script/ManorLords.IoHandler:LoadGameFromSlot"
 function Runtime.new(api)
     local runtime = {}
     local registry = Registry.new(api.registry)
+    local items, item_receipt
+    local item_transaction = {retain_undo = true}
+    local supported = {}
+    for name in pairs(capabilities) do supported[name] = true end
+    supported["mle.items"] = api.items ~= nil
     local broker = Hooks.new(api.register_hook)
     local providers = {}
     local report = api.report or function() end
-    local host = Host.new({capabilities = capabilities, enabled = api.enabled, report = report})
+    local host = Host.new({capabilities = supported, enabled = api.enabled, report = report})
     local blocked = false
     local cleanup = {}
-    local counters = {wrote = 0, loaded = 0, failed = 0, empty_writes = 0, missing_loads = 0}
+    local counters = {wrote = 0, loaded = 0, failed = 0, empty_writes = 0, missing_loads = 0,
+        game_saves_accepted = 0, game_saves_rejected = 0}
 
     local function guarded(id, operation, callback)
         if not callback then return nil end
@@ -43,6 +51,8 @@ function Runtime.new(api)
         for _, id in ipairs(ids) do callback(id, providers[id]) end
     end
 
+    function runtime:capabilities() return supported end
+
     function runtime:register(manifest, activate, directory)
         assert(type(activate) == "function")
         local descriptor = {}
@@ -59,6 +69,19 @@ function Runtime.new(api)
                     assert(active and host:state() == "activation", "Registry registration requires activation")
                     registry:register(context.id, definition)
                 end
+            end
+            if granted["mle.items"] then
+                items = items or Items.new(api.items)
+                local function scoped(register)
+                    return function(definition)
+                        assert(active and host:state() == "activation", "Register items during package activation")
+                        assert(type(definition) == "table" and type(definition.id) == "string"
+                            and definition.id:match("^([^:]+):") == context.id, "Item namespace must match package ID")
+                        return register(definition)
+                    end
+                end
+                services.register_item = scoped(items.register_item)
+                services.register_recipe = scoped(items.register_recipe)
             end
             if granted["mle.hooks"] then
                 services.hooks = {add = function(path, first, second)
@@ -102,13 +125,22 @@ function Runtime.new(api)
 
     function runtime:apply_registry()
         assert(host:state() == "active")
-        return registry:apply()
+        if not items then return registry:apply() end
+        local changes = Rows.run(function(transaction)
+            local receipt = items.apply(transaction)
+            local changed = registry:apply()
+            item_receipt = receipt
+            return changed
+        end, item_transaction)
+        return changes
     end
 
     function runtime:inspect()
-        return {registry = registry:inspect(), hooks = broker.targets(), lifecycle = host:state(),
+        return {item_rows = item_receipt and item_receipt.created or 0, registry = registry:inspect(), hooks = broker.targets(), lifecycle = host:state(),
             save = {wrote = counters.wrote, loaded = counters.loaded, failed = counters.failed,
-                empty_writes = counters.empty_writes, missing_loads = counters.missing_loads, blocked = blocked}}
+                empty_writes = counters.empty_writes, missing_loads = counters.missing_loads,
+                game_saves_accepted = counters.game_saves_accepted,
+                game_saves_rejected = counters.game_saves_rejected, blocked = blocked}}
     end
 
     local function save(_, object)
@@ -128,6 +160,14 @@ function Runtime.new(api)
         end
         NativeSave.write(value, next_state, api.make_name)
         counters.wrote = counters.wrote + 1
+    end
+
+    local function after_save(_, returned, object)
+        if not api.is_save(object:get()) then return end
+        local accepted = returned:get()
+        assert(type(accepted) == "boolean", "Unexpected native save result")
+        local counter = accepted and "game_saves_accepted" or "game_saves_rejected"
+        counters[counter] = counters[counter] + 1
     end
 
     local function load(_, returned)
@@ -153,7 +193,8 @@ function Runtime.new(api)
         assert(host:state() == "active" and #cleanup == 0, "Save hooks already bound or runtime inactive")
         if not next(providers) then return false end
         if api.can_bind_save then assert(api.can_bind_save(), "Native save interfaces are unavailable") end
-        local first = broker.add(save_path, guarded("mle.runtime", save_path, save))
+        local first = broker.add(save_path, guarded("mle.runtime", save_path, save),
+            guarded("mle.runtime", save_path, after_save))
         local ok, second = pcall(broker.add, load_path, function() end, guarded("mle.runtime", load_path, load))
         if not ok then first(); error(second, 0) end
         cleanup = {first, second}
@@ -172,10 +213,21 @@ function Runtime.new(api)
     end
 
     function runtime:stop()
-        registry:restore()
+        local ok, reason = pcall(registry.restore, registry)
+        local rows_ok, rows_error = true, nil
+        if item_transaction.restore then
+            rows_ok, rows_error = pcall(function()
+                assert(api.items.before_world_load(), "Remove item rows at the main menu")
+                item_transaction.restore()
+            end)
+            item_receipt = nil
+        end
         for _, remove in ipairs(cleanup) do remove() end
         cleanup = {}
-        return host:stop()
+        local stopped, failures = host:stop()
+        if not ok then error(reason, 0) end
+        if not rows_ok then error(rows_error, 0) end
+        return stopped, failures
     end
     return runtime
 end

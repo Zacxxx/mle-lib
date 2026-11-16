@@ -6,6 +6,8 @@ local Runtime = require("mle_lib.runtime")
 local Json = require("mle_lib.json")
 local Host = require("mle_lib.host")
 local Bridge = require("mle_lib.building_bridge")
+local Ids = require("mle_lib.building_ids")
+local File = require("mle_lib.identity_file")
 local helpers = require("UEHelpers")
 local building_table = "/Game/NotStronghold/Data/buildingStats.buildingStats"
 
@@ -29,7 +31,24 @@ local function start()
     local catalog = assert(file:read("*a"))
     file:close()
     local save_class = StaticFindObject("/Script/ManorLords.MLSaveGame")
-    local runtime = Runtime.new({directory = directory,
+    local item_table = StaticFindObject("/Game/NotStronghold/Data/DT_Items.DT_Items")
+    local items
+    if valid(item_table) then
+        local path = directory .. "/State/items.ids"
+        local ledger
+        items = {items = item_table, before_world_load = at_main_menu,
+            reserve = function(key, numeric_id)
+                ledger = ledger or Ids.new({
+                    domains = {"items"},
+                    read = function() return File.read(path) or File.read(path .. ".bak") end,
+                    write = function(value) File.write(path, value) end,
+                    occupied = function(_, id) return not not item_table:FindRow(tostring(id)) end,
+                })
+                ledger.reserve("items", key, numeric_id)
+            end,
+        }
+    end
+    local runtime = Runtime.new({directory = directory, items = items,
         registry = {
             fields = {buildings = {storageLimitGeneric = "integer", bVisibleInUi = "boolean"}},
             can_write = at_main_menu,

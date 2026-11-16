@@ -1,20 +1,8 @@
 -- Ready-to-use native registration profile for Manor Lords 0.8.117 / UE 5.5.
 local Runtime = {}
 local default_hooks, default_scheduler
-local function read(path)
-    local file = io.open(path, "rb"); if not file then return nil end
-    local value = file:read("*a"); file:close(); return value
-end
-local function write(path, value)
-    local file = assert(io.open(path .. ".tmp", "wb")); local ok, reason = file:write(value); file:close(); assert(ok, reason)
-    assert(read(path .. ".tmp") == value, "Identity staging readback failed")
-    -- Keep the previous ledger recoverable if replacement fails.
-    if read(path) then
-        os.remove(path .. ".bak"); assert(os.rename(path, path .. ".bak"))
-    end
-    local moved, error = os.rename(path .. ".tmp", path)
-    if not moved then os.rename(path .. ".bak", path); assert(moved, error) end
-end
+local File = require("mle_lib.identity_file")
+local read, write = File.read, File.write
 function Runtime.new(api)
     local find = api.find_object or StaticFindObject
     local directory = assert(api.directory, "Supply the mod directory with State, Control, Native and Assets subdirectories")

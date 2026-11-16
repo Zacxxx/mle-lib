@@ -59,6 +59,7 @@ function Items.new(api)
             assert(type(spec.tradeable) == "boolean", "Item tradeability must be explicit")
             entry.tradeable = spec.tradeable and not entry.retired
         end
+        if api.reserve then api.reserve(entry.id, entry.numeric_id) end
         reserved[entry.numeric_id], entries[entry.id] = entry, entry
         order[#order + 1] = entry
         return entry.numeric_id

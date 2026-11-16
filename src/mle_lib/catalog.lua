@@ -1,5 +1,4 @@
 local Host = require("mle_lib.host")
-local Runtime = require("mle_lib.runtime")
 
 local Catalog = {}
 
@@ -32,7 +31,7 @@ function Catalog.load(mods, contents, runtime)
             assert(line:match("^%s*$") or line:match("^%s*#"), "Invalid package catalog line")
         end
     end
-    local plan, failure = Host.plan(packages, {}, {capabilities = Runtime.capabilities})
+    local plan, failure = Host.plan(packages, {}, {capabilities = runtime:capabilities()})
     assert(plan, failure and failure.code .. ": " .. failure.message)
     for _, manifest in ipairs(plan) do
         local directory = directories[manifest.id]

@@ -2,12 +2,16 @@
 local Codec = require("mle_lib.state_codec")
 local Ids = {}
 function Ids.new(api)
+    local domains = api.domains or {"buildings", "parts", "upgrades"}
     local function load()
         local persisted = api.read()
-        local ledger = persisted and Codec.decode(persisted) or {schema = 1, buildings = {}, parts = {}, upgrades = {}}
+        local ledger = persisted and Codec.decode(persisted) or {schema = 1}
+        if not persisted then
+            for _, domain in ipairs(domains) do ledger[domain] = {} end
+        end
         assert(ledger.schema == 1, "Unsupported building identity ledger schema")
         local used = {}
-        for _, domain in ipairs({"buildings", "parts", "upgrades"}) do
+        for _, domain in ipairs(domains) do
             assert(type(ledger[domain]) == "table", "Invalid building identity ledger")
             used[domain] = {}
             for key, id in pairs(ledger[domain]) do
