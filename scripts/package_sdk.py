@@ -23,6 +23,7 @@ def package(destination):
             files['Native/' + path.name] = path.read_bytes()
     files.update({'State/.keep': b'', 'Control/.keep': b'', 'Assets/Cards/.keep': b''})
     files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
+    files['LICENSE'] = (ROOT / 'LICENSE').read_bytes()
     for name in ('example_house.lua', 'recipe_panel.lua', 'workshop_yard.lua'):
         files['examples/' + name] = (ROOT / 'examples' / name).read_bytes()
     manifest = {'name': 'MLE Lib', 'version': version,

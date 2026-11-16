@@ -15,3 +15,7 @@ Ruralities pins a Git commit and includes the matching SDK modules in its bundle
 See [the delivery plan](docs/PLAN.md), [registry API](docs/registry.md), and [save companions](docs/sidecar.md). The planned R1 and R2 live acceptance evidence is tracked separately from the offline test results.
 
 The [building registration API](docs/buildings.md) includes the native adapter, building IDs, construction and preview bindings, upgrade dispatch, localization and UI lifecycle. Ruralities consumes the same pinned implementation. Offline tests and native bridge compilation pass; loaded-game acceptance is tracked separately.
+
+## License
+
+MLE Lib is distributed under the [MIT License](LICENSE).
