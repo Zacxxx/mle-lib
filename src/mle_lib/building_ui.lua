@@ -10,6 +10,32 @@ function UI.new(api)
             if valid(image) then widget:SetBrushFromTexture(image, false) end
         end
     end
+    local mounted = {}
+    local function unmount(key)
+        local previous = mounted[key]
+        mounted[key] = nil
+        if previous then previous.cleanup() end
+    end
+    local function refresh_panels(screens)
+        local visible = {}
+        if not api.panels then return end
+        for _, screen in ipairs(screens) do
+            if valid(screen) and screen:IsVisible() and valid(screen.building) then
+                local key, id = screen:GetAddress(), screen.building:GetType()
+                if api.panels.panel_mounts(id) then
+                    local instance = api.panels.instance_for(screen.building)
+                    if instance then
+                        visible[key] = true
+                        if mounted[key] and mounted[key].instance ~= instance then unmount(key) end
+                        if not mounted[key] then
+                            mounted[key] = {instance = instance, cleanup = api.panels.mount_panel(id, screen, instance)}
+                        end
+                    end
+                end
+            end
+        end
+        for key in pairs(mounted) do if not visible[key] then unmount(key) end end
+    end
     function self.refresh(definitions)
         for _, card in ipairs(api.find_all("W_HUD_BuildingCardV2_C") or {}) do
             if valid(card) then
@@ -23,12 +49,14 @@ function UI.new(api)
                 if definition then assign(tip.Thumbnail, definition.panel or definition.card) end
             end
         end
-        for _, screen in ipairs(api.find_all("Inventory_C") or {}) do
+        local screens = api.find_all("Inventory_C") or {}
+        for _, screen in ipairs(screens) do
             if valid(screen) and valid(screen.building) then
                 local definition = definitions[screen.building:GetType()]
                 if definition then assign(screen.buildingImage, definition.panel) end
             end
         end
+        refresh_panels(screens)
     end
     function self.role(widget, definitions)
         if not valid(widget) or not valid(widget.building) or not valid(widget.JobText) then return end
@@ -107,6 +135,7 @@ function UI.new(api)
         running, generation = false, generation + 1
         for _, remove in ipairs(removers) do remove() end
         removers = {}
+        for key in pairs(mounted) do unmount(key) end
     end
     return self
 end

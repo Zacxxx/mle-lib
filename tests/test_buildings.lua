@@ -61,3 +61,56 @@ assert(not pcall(Rows.run, function(transaction)
 end))
 assert(not live["example.mod:outer"] and outer_service.inspect().state == "rolled_back")
 print("PASS: enclosing package transaction rolls back building registration and updates its status")
+
+local composed = service()
+composed.register_building_behavior({
+    id = "example.mod:recipes",
+    status = {recipe = true},
+    create = function(context, saved) return saved or {recipe = context.options.initial} end,
+    read = function(_, state) return state end,
+    save = function(_, state) return state end,
+    actions = {select_recipe = function(_, state, recipe)
+        assert(recipe == "boards" or recipe == "beams", "Unsupported recipe")
+        state.recipe = recipe
+    end},
+})
+local panel_api, closed
+composed.register_building_panel({
+    id = "example.mod:workshop_panel",
+    sections = {recipe_picker = {status = {"recipe"}, actions = {"select_recipe"}}},
+    mount = function(_, ui)
+        panel_api = ui
+        return function() closed = true end
+    end,
+})
+local function template(id, behavior)
+    return {id = id, native_base = 72, behavior = {id = behavior, options = {initial = "boards"}},
+        interface = {id = "example.mod:workshop_panel", sections = {"recipe_picker"}},
+        defaults = {families = 2, fields = {needsRoad = true, storageLimitGeneric = 100}}}
+end
+composed.register_building_template(template("example.mod:bad", "mle:native_storage"))
+local workshop = definition("workshop", 701)
+workshop.template_id, workshop.template = nil, "example.mod:bad"
+local ok, reason = pcall(composed.register_building, workshop)
+assert(not ok and reason:find("lacks panel status", 1, true))
+composed.register_building_template(template("example.mod:workshop", "example.mod:recipes"))
+workshop.template, workshop.fields = "example.mod:workshop", {storageLimitGeneric = 200}
+composed.register_building(workshop)
+local larger = definition("larger_workshop", 702)
+larger.template_id, larger.template = nil, workshop.template
+composed.register_building(larger)
+composed.apply()
+assert(live[workshop.id].fields.storageLimitGeneric == 200 and live[larger.id].fields.storageLimitGeneric == 100)
+assert(live[workshop.id].fields.needsRoad and live[workshop.id].families == 2)
+local first_shop = composed.attach_instance(701, "site-1")
+local second_shop = composed.attach_instance(701, "site-2")
+local unmount = composed.mount_panel(701, {}, first_shop)
+panel_api.invoke("select_recipe", "beams")
+assert(panel_api.get_status().recipe == "beams" and second_shop.get_status().recipe == "boards")
+assert(not pcall(panel_api.invoke, "select_recipe", "unknown"))
+local save = first_shop.snapshot()
+first_shop.detach("save reload")
+unmount(); unmount()
+assert(closed and not pcall(panel_api.get_status))
+assert(composed.attach_instance(701, "site-1", nil, save).get_status().recipe == "beams")
+print("PASS: template overrides, capability checks, isolated behavior, panel actions and state restore")

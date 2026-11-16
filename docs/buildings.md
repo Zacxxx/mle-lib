@@ -80,3 +80,32 @@ The default scheduler and hook broker work in the consumer Lua VM. When a siblin
 Registration receipts explicitly retain `gameplay_verified = false`. They establish registration/readback integrity. Verify normal placement, slope/road collision, native workers, staged construction, upgrading, destruction and save/reload in the supported game before declaring a content package playable. The library's tests cover simulated multi-building registration and rollback, UI cleanup, stable identities, upgrade rows, the native memory layouts, and reproducible cross-compilation of the Windows bridge.
 
 Run `python3 scripts/mle.py test` and `python3 scripts/build_native.py` for offline verification.
+
+## Reusable templates
+
+MLE Lib 0.1.4 adds templates, behavior modules and panel modules. Register the modules and template before queuing a building that uses them.
+
+```lua
+buildings.register_building_template({
+    id = "example.mod:supply_room",
+    native_base = 72,
+    behavior = {id = "mle:native_storage"},
+    interface = {
+        id = "mle:native_storage_panel",
+        sections = {"workers", "storage", "accepted_goods"},
+    },
+    defaults = {
+        families = 2,
+        fields = {storageLimitGeneric = 100, needsRoad = true},
+    },
+})
+-- In your building definition, supply template = "example.mod:supply_room".
+```
+
+Each template selects a native row baseline on this game profile. Buildings using it supply their own identity, assets and presentation. A building can override template fields by key and replace the template's family count and construction goods. Existing prepared rows may retain their original native baseline during migration. The native storage panel uses the game's existing controls. Its section list describes the native capabilities the template uses.
+
+Custom behavior modules declare status keys and action handlers. Each panel section lists the status and actions it needs. A mismatch fails before building registration. See [the recipe panel example](../examples/recipe_panel.lua) for a complete composition example with a consumer-supplied widget renderer.
+
+Call `attach_instance(building_id, stable_instance_key, actor, saved_state)` from your world integration on placement or reload. Its return value provides `get_status()`, `invoke(action, argument)`, `tick(elapsed)`, `snapshot()` and `detach(reason)`. The host supplies stable placed-building keys, schedules gameplay ticks, persists snapshots alongside its saves and detaches instances when their actors are demolished or the world unloads. The optional behavior callbacks are `validate(options, definition)`, `create(context, saved_state)`, `read(context, state)`, `tick(context, state, elapsed)`, `save(context, state)` and `detach(context, state, reason)`. Actions validate gameplay inputs and own mutations.
+
+A custom panel's `mount(screen, ui)` receives the native Inventory screen, selected sections, panel options and the behavior's status/action interface. It returns a cleanup callback. MLE Lib mounts it when a visible Inventory screen targets an attached actor and cleans it up when that screen closes, switches actors, or the library UI stops. The panel author supplies the widgets and their event bindings. Custom production scheduling and the Oil Press migration are separate from recipe-selection plumbing.

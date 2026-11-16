@@ -128,15 +128,12 @@ function Runtime.new(api)
                 {buildings = buildings, upgrades = upgrades, bridge = bridge}, transaction)
         end,
     })
-    service = require("mle_lib.buildings").new({before_world_load = before, adapter = native, identities = identities, transaction = api.transaction})
-    local register = service.register_building
-    function service.register_building(definition)
-        local prepared = {}
-        for key, value in pairs(definition) do prepared[key] = value end
+    function native.prepare(definition)
         local template = assert(buildings:FindRow(tostring(definition.template_id)), "Building template missing")
-        prepared.template_label = prepared.template_label or (type(template.DisplayName) == "string" and template.DisplayName or template.DisplayName:ToString())
-        return register(prepared)
+        definition.template_label = definition.template_label or (type(template.DisplayName) == "string"
+            and template.DisplayName or template.DisplayName:ToString())
     end
+    service = require("mle_lib.buildings").new({before_world_load = before, adapter = native, identities = identities, transaction = api.transaction})
     service.identities = identities
     function service.start_ui(ui_api)
         ui_api = ui_api or {}
@@ -171,7 +168,7 @@ function Runtime.new(api)
                 if key:sub(1, 6) == "/Game/" then return assets.load(key) end
                 return texture(key)
             end, schedule = ui_api.schedule, hooks = ui_api.hooks, log = ui_api.log,
-            make_text = ui_api.make_text or FText, translate = ui_api.translate})
+            make_text = ui_api.make_text or FText, translate = ui_api.translate, panels = service})
         ui.start(function() return presentations end)
     end
     function service.stop_ui() if ui then ui.stop(); ui = nil end end
