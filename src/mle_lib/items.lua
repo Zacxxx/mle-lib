@@ -26,7 +26,8 @@ function Items.new(api)
         assert(state == "collecting", "Item registrations are frozen")
         assert(type(spec.id) == "string" and spec.id:match("^[a-z][a-z0-9_.%-]*:[a-z][a-z0-9_]*$")
             and not entries[spec.id], "Invalid or duplicate content ID")
-        assert(integer(spec.numeric_id, 1) and not reserved[spec.numeric_id], "Invalid or duplicate numeric item ID")
+        assert((spec.numeric_id == nil and api.reserve) or
+            (integer(spec.numeric_id, 1) and not reserved[spec.numeric_id]), "Invalid or duplicate numeric item ID")
         assert(integer(spec.template_id, 1), "Native item template is required")
         assert(type(spec.name) == "string" and #spec.name > 0, "Native item name is required")
         local entry = {
@@ -59,7 +60,12 @@ function Items.new(api)
             assert(type(spec.tradeable) == "boolean", "Item tradeability must be explicit")
             entry.tradeable = spec.tradeable and not entry.retired
         end
-        if api.reserve then api.reserve(entry.id, entry.numeric_id) end
+        if api.reserve then
+            local id = api.reserve(entry.id, entry.numeric_id)
+            assert(integer(id, 1) and not reserved[id], "Allocator returned an invalid or duplicate numeric item ID")
+            assert(entry.numeric_id == nil or entry.numeric_id == id, "Allocator remapped an explicit numeric item ID")
+            entry.numeric_id = id
+        end
         reserved[entry.numeric_id], entries[entry.id] = entry, entry
         order[#order + 1] = entry
         return entry.numeric_id

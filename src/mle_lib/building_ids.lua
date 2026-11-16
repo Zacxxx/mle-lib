@@ -29,7 +29,13 @@ function Ids.new(api)
         assert(used[domain] and type(key) == "string" and key:match("^[a-z][a-z0-9_.%-]*:[a-z][a-z0-9_]*$"), "Invalid identity request")
         local existing = ledger[domain][key]
         if existing then assert(not preferred or preferred == existing, "Saved identity cannot be remapped"); return existing end
-        local id = preferred or (api.minimums[domain] + 1)
+        local limit = api.maximums and api.maximums[domain] or 2147483647
+        local minimum = api.minimums and api.minimums[domain]
+        assert(preferred or minimum, "No automatic identity range configured")
+        local id = preferred or (minimum + 1)
+        if not preferred then
+            assert(math.type(limit) == "integer" and id <= limit and limit <= 2147483647, "Invalid automatic identity range")
+        end
         assert(math.type(id) == "integer" and id > 0 and id <= 2147483647, "Invalid preferred identity")
         if preferred then
             assert(not used[domain][id], "Preferred identity reserved by another building")
@@ -37,7 +43,7 @@ function Ids.new(api)
         else
             while used[domain][id] or api.occupied(domain, id) do
                 id = id + 1
-                assert(id <= 2147483647, "Identity space exhausted")
+                assert(id <= limit, "Identity space exhausted")
             end
         end
         ledger[domain][key], used[domain][id] = id, key

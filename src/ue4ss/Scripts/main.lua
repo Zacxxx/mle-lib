@@ -38,13 +38,24 @@ local function start()
         local ledger
         items = {items = item_table, before_world_load = at_main_menu,
             reserve = function(key, numeric_id)
-                ledger = ledger or Ids.new({
-                    domains = {"items"},
-                    read = function() return File.read(path) or File.read(path .. ".bak") end,
-                    write = function(value) File.write(path, value) end,
-                    occupied = function(_, id) return not not item_table:FindRow(tostring(id)) end,
-                })
-                ledger.reserve("items", key, numeric_id)
+                if not ledger then
+                    local minimums, maximums
+                    local range = File.read(directory .. "/State/item-range.txt")
+                    if range then
+                        local first, last = range:match("^%s*(%d+)%s+(%d+)%s*$")
+                        first, last = tonumber(first), tonumber(last)
+                        assert(first and last and math.type(first) == "integer" and math.type(last) == "integer"
+                            and first >= 1 and first <= last and last <= 2147483647, "Invalid State/item-range.txt")
+                        minimums, maximums = {items = first - 1}, {items = last}
+                    end
+                    ledger = Ids.new({
+                        domains = {"items"}, minimums = minimums, maximums = maximums,
+                        read = function() return File.read(path) or File.read(path .. ".bak") end,
+                        write = function(value) File.write(path, value) end,
+                        occupied = function(_, id) return not not item_table:FindRow(tostring(id)) end,
+                    })
+                end
+                return ledger.reserve("items", key, numeric_id)
             end,
         }
     end

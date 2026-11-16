@@ -35,7 +35,13 @@ Declare the capabilities your package uses in its manifest. The runtime provides
   a different active package's item by that namespaced ID. Declare a dependency
   on the other package when the recipe requires its item. Both functions use the
   descriptor fields shown in the [standalone example](../examples/items_and_recipes.lua).
-  Supply an explicit `numeric_id` confirmed usable by your game adapter. The
+  Supply an explicit `numeric_id` confirmed usable by your game adapter, or
+  omit it to allocate from the range in `MLELib/State/item-range.txt`. The file
+  contains two decimal integers separated by whitespace, inclusive first and
+  last IDs. No range ships enabled. Choose a range verified for the game build
+  and all legacy item providers in the installation before enabling allocation.
+  The runtime skips occupied rows and reserved IDs. Existing names retain their
+  allocated IDs if the range changes. Exhaustion stops registration. The
   runtime persists ownership in `MLELib/State/items.ids` and rejects collisions
   with existing rows or previously reserved IDs. Keep this ledger with saves.
   Reservations survive failed activation and package disablement to prevent ID

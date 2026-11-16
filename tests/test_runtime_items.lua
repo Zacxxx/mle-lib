@@ -8,9 +8,9 @@ end
 local function boot(reject_patch)
     local native = {Name = "Native", ItemCategory = 2, Subcategory = 0, craftingTool = 2,
         craftingAnim = 3, creationProg = 4, Resources = goods(), craftingOutput = goods()}
-    local rows = {["1"] = native}
+    local rows = {["1"] = native, ["503"] = native}
     local ids = Ids.new({
-        domains = {"items"},
+        domains = {"items"}, minimums = {items = 500}, maximums = {items = 504},
         read = function() return ledger end,
         write = function(value) ledger = value end,
         occupied = function(_, number) return rows[tostring(number)] ~= nil end,
@@ -24,7 +24,7 @@ local function boot(reject_patch)
         },
         items = {
             before_world_load = function() return true end,
-            reserve = function(id, number) ids.reserve("items", id, number) end,
+            reserve = function(id, number) return ids.reserve("items", id, number) end,
             items = {
                 FindRow = function(_, id) return rows[id] end,
                 RemoveRow = function(_, id) rows[id] = nil end,
@@ -61,7 +61,7 @@ local function declare(runtime, patch)
         end
     end)
     runtime:register(descriptor("test.recipes"), function(context)
-        context.services.register_recipe({id = "test.recipes:craft", name = "Craft", numeric_id = 502,
+        context.services.register_recipe({id = "test.recipes:craft", name = "Craft",
             template_id = 1, crafting_template_id = 1, inputs = {{item = "test.items:timber", amount = 2}},
             outputs = {{item = 1, amount = 1}}})
     end)
@@ -97,3 +97,13 @@ end)
 active, failure = runtime:start()
 assert(not active and failure.message:find("Saved identity cannot be remapped", 1, true))
 print("PASS: shared item and recipe registration, rollback, and persistent numeric ownership")
+
+runtime, rows = boot(false)
+runtime:register(descriptor("test.later"), function(context)
+    assert(context.services.register_item(item("test.later:timber")) == 504)
+    local available, reason = pcall(context.services.register_item, item("test.later:extra"))
+    assert(not available and reason:find("Identity space exhausted", 1, true))
+end)
+assert(runtime:start())
+runtime:apply_registry()
+assert(rows["503"].Name == "Native" and rows["504"] and not rows["501"] and not rows["502"])
