@@ -6,7 +6,7 @@ function Hooks.new(register)
     local broker = {}
     local function dispatch(target, phase, ...)
         local result
-        for _, subscriber in ipairs(target.subscribers) do
+        for _, subscriber in ipairs({table.unpack(target.subscribers)}) do
             local callback = subscriber[phase]
             if subscriber.active and callback then
                 local value = callback(...)
@@ -17,6 +17,13 @@ function Hooks.new(register)
             end
         end
         return result
+    end
+
+    function broker.targets()
+        local paths = {}
+        for path in pairs(targets) do paths[#paths + 1] = path end
+        table.sort(paths)
+        return paths
     end
 
     function broker.add(path, before, after)

@@ -1,0 +1,6 @@
+id = "mle.witness"
+version = "0.1.0"
+engine = ">=0.1.7 <0.2.0"
+capabilities = ["mle.registry", "mle.hooks", "mle.save"]
+entry = "main.lua"
+files = ["main.lua"]

@@ -10,7 +10,7 @@ python3 scripts/mle.py validate examples
 python3 scripts/mle.py test
 ```
 
-Ruralities pins a Git commit and includes the matching SDK modules in its bundle. Its UE4SS entry point creates one host for its packages. Building consumers can use a common shared_directory for native dispatch and identity allocation. Lua callbacks remain in each consumer VM. The supported native capability profile is documented with the building API.
+The separately installed [shared runtime](docs/shared-runtime.md) loads Ruralities and other content packages into one UE4SS Lua VM. It coordinates registry patches, reflected hook subscriptions and save providers. Ruralities pins the runtime version in its package manifest and installer receipt.
 
 See [the delivery plan](docs/PLAN.md), [registry API](docs/registry.md), and [save companions](docs/sidecar.md). The planned R1 and R2 live acceptance evidence is tracked separately from the offline test results.
 

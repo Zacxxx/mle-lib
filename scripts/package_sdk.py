@@ -14,7 +14,7 @@ from build_native import build
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def package(destination):
+def package(destination, runtime=False):
     version = re.search(r'VERSION = "([^"]+)"', (ROOT / 'src/mle_lib/host.lua').read_text()).group(1)
     files = {'Scripts/mle_lib/' + path.name: path.read_bytes() for path in sorted((ROOT / 'src/mle_lib').glob('*.lua'))}
     with tempfile.TemporaryDirectory(prefix='mle-sdk-native-') as temporary:
@@ -23,6 +23,10 @@ def package(destination):
             files['Native/' + path.name] = path.read_bytes()
     files.update({'State/.keep': b'', 'Control/.keep': b'', 'Assets/Cards/.keep': b''})
     files['README.md'] = (ROOT / 'docs/buildings.md').read_text().replace('../examples/', 'examples/').encode()
+    if runtime:
+        files['Scripts/main.lua'] = (ROOT / 'src/ue4ss/Scripts/main.lua').read_bytes()
+        files['packages.txt'] = b'# List one installed package folder per line.\n'
+        files['README.md'] = (ROOT / 'docs/shared-runtime.md').read_bytes()
     files['LICENSE'] = (ROOT / 'LICENSE').read_bytes()
     for name in ('example_house.lua', 'recipe_panel.lua', 'workshop_yard.lua', 'items_and_recipes.lua'):
         files['examples/' + name] = (ROOT / 'examples' / name).read_bytes()
@@ -50,4 +54,6 @@ def package(destination):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'dist/mle-lib-sdk.zip')
-    print(package(parser.parse_args().output))
+    parser.add_argument('--runtime', action='store_true')
+    args = parser.parse_args()
+    print(package(args.output, runtime=args.runtime))
