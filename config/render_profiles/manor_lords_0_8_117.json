@@ -1,0 +1,31 @@
+{
+    "schema_version": 1,
+    "id": "manor_lords_0_8_117",
+    "engine_version": "5.5.4",
+    "cvars": {
+        "r.AllowStaticLighting": 0,
+        "r.SupportStationarySkylight": 0,
+        "r.SupportLowQualityLightmaps": 0,
+        "r.ForwardShading": 0,
+        "r.DBuffer": 1,
+        "r.SelectiveBasePassOutputs": 0,
+        "r.GBufferFormat": 1,
+        "r.VelocityOutputPass": 0,
+        "r.RayTracing": 0,
+        "r.Nanite.ProjectEnabled": 0,
+        "r.VirtualTextures": 1,
+        "r.VirtualTexturedLightmaps": 0,
+        "r.SkinCache.CompileShaders": 1,
+        "r.SupportSkyAtmosphere": 1,
+        "r.SupportSkyAtmosphereAffectsHeightFog": 0,
+        "r.DynamicGlobalIlluminationMethod": 0,
+        "r.ReflectionMethod": 2
+    },
+    "provenance": {
+        "steam_build": "26185246",
+        "source": "ManorLords/Config/DefaultEngine.ini in installed pakchunk0-Windows.pak",
+        "source_sha256": "60df958219e5e9c739b3a41cbe2edb2ba1ab4b6b34da55a1502c0db3a3ee6dca",
+        "platform_source": "ManorLords/Config/Windows/WindowsEngine.ini (no renderer overrides)",
+        "platform_source_sha256": "6004ee378648a749cffd7701b9d5398699bdd286105f716077bfdf1ba2d9847d"
+    }
+}

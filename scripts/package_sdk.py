@@ -23,6 +23,9 @@ def package(destination, runtime=False, enable=False):
                   for path in sorted((ROOT / 'src/mle_authoring').glob('*.py'))})
     files['examples/assembly_roles.py'] = (ROOT / 'examples/assembly_roles.py').read_bytes()
     files['docs/assembly-authoring.md'] = (ROOT / 'docs/assembly-authoring.md').read_bytes()
+    files['docs/material-cooking.md'] = (ROOT / 'docs/material-cooking.md').read_bytes()
+    files.update({'config/render_profiles/' + path.name: path.read_bytes()
+                  for path in sorted((ROOT / 'config/render_profiles').glob('*.json'))})
     with tempfile.TemporaryDirectory(prefix='mle-sdk-native-') as temporary:
         build(ROOT / 'src/native', temporary)
         for path in Path(temporary).iterdir():
