@@ -1,0 +1,17 @@
+{
+    "FileVersion": 3,
+    "EngineAssociation": "5.5",
+    "DisableEnginePluginsByDefault": true,
+    "Category": "Modding",
+    "Description": "MLE Lib original Example House tutorial assets",
+    "Plugins": [
+        {
+            "Name": "PythonScriptPlugin",
+            "Enabled": true
+        },
+        {
+            "Name": "EditorScriptingUtilities",
+            "Enabled": true
+        }
+    ]
+}

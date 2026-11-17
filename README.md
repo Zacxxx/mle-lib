@@ -16,6 +16,12 @@ See [the delivery plan](docs/PLAN.md), [registry API](docs/registry.md), and [sa
 
 The [building registration API](docs/buildings.md) includes the native adapter, building IDs, construction and preview bindings, upgrade dispatch, localization and UI lifecycle. Ruralities consumes the same pinned implementation. Offline tests and native bridge compilation pass; loaded-game acceptance is tracked separately.
 
+Start with the [new building and 3D model tutorial](docs/new-building-tutorial.md).
+It includes an [original Example House](examples/new_building/README.md) with
+textured model sources and headless authoring, Windows cooking and packaging
+scripts. The guide records the Candidate 46 renderer fix and its user-confirmed
+in-world Hay Barn result, with separate acceptance checks for new content.
+
 ## License
 
 MLE Lib is distributed under the [MIT License](LICENSE).

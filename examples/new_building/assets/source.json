@@ -1,0 +1,10 @@
+{
+    "units": "metres; FBX imports as centimetres",
+    "pieces": [
+        "Foundation",
+        "Frame",
+        "Roof"
+    ],
+    "source": "Original procedural tutorial geometry",
+    "native_assets_included": false
+}

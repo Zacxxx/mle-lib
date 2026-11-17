@@ -2,11 +2,11 @@
 
 MLE Lib 0.1.3 supplies the Manor Lords 0.8.117 / UE4SS e3ba1016 building registration profile. `mle_lib.buildings.new` creates the native service when given a mod directory and asset namespace. Native classes, construction references, previews, presentation, upgrade transitions and ID persistence are managed inside the library. An advanced caller can still supply an adapter for another profile.
 
-The implementation has offline regression coverage. Loaded-world acceptance is pending. The existing Ruralities lighting and upgrade reports require fresh gameplay checks; an offline test does not prove their resolution.
+The implementation has offline regression coverage. The Ruralities Hay Barn upgrade was confirmed in prior user tests, and Candidate 46's repaired rendering was confirmed by the user on 2026-11-17. These observations do not certify arbitrary new content. Follow the [end-to-end tutorial](new-building-tutorial.md), with separate acceptance for each building.
 
 ## Consumer setup
 
-Bundle the pinned `src/mle_lib/*.lua` modules. Run `python3 scripts/build_native.py --output /path/to/YourMod/Native` from the library checkout, and create `State`, `Control` and `Assets/Cards` beside that Native directory. Include your owned cooked Windows pak in the game's mod pak directory. Keep these deliveries versioned together and install while the game is closed. The native DLL verifies the exact supported executable hash before any memory write or hook installation.
+Install the pinned independent MLE Lib runtime once. New content packages use `context.services.new_building_runtime` from the shared host; they do not bundle private copies of the library or bridge. Create writable `State`, `Control` and `Assets` folders for the consumer, and install its owned cooked Windows pak in the game's mod pak directory. Preserve the shared package catalog, keep deliveries versioned together and install while the game is closed. The native DLL verifies the exact supported executable hash before any memory write or hook installation. See the [current complete consumer example](../examples/new_building/entry.lua).
 
 Use the main menu registration phase, on the game thread. A complete example is in [examples/example_house.lua](../examples/example_house.lua). It requires actual authored and cooked assets at its declared paths. The library does not generate original building art or geometry.
 
@@ -71,7 +71,7 @@ Card and panel values may be PNG keys in `Assets/Cards`, or owned cooked Texture
 
 The service installs card, tooltip, inventory, worker-role and upgrade-presentation callbacks after native registration. It shares the hook broker and game-thread dispatcher when provided by the host. UI work is deferred beyond native inventory construction and refreshed after the asynchronous header load callback. `stop_ui()` unsubscribes the library's callbacks and invalidates queued work. `start_ui()` can re-enable presentation. Gameplay data stays registered while saved actors depend on it.
 
-The default scheduler and hook broker work in the consumer Lua VM. When a sibling `MLELib/Native/buildings_name.txt` exists, consumers automatically use that shared runtime folder. They can also set `shared_directory` explicitly to a library runtime folder containing Native, Control and State. They then use the same native dispatcher and ID ledger while retaining their own asset directories and UI scopes. All native commands and ledger reservations run synchronously on the game thread. Shared native delivery must use one pinned library version. Lua callbacks still live in their respective UE4SS VMs.
+Legacy direct integrations can discover a sibling `MLELib/Native/buildings_name.txt` or supply `shared_directory`. New packages should use the independent shared host: its `new_building_runtime` service supplies the shared directory and hook broker, and packages run in one Lua VM with coordinated callbacks. They retain their own asset directories and UI scopes while using the shared native dispatcher and ID ledger. All native commands and ledger reservations run synchronously on the game thread. Shared delivery must use one compatible pinned library version.
 
 ## Transactions and acceptance
 
